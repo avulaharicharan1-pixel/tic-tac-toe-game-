@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Tic Tac Toe - Fixed</title>
+    <style>
+        :root {
+            --bg: #f5f5f5;
+            --card-bg: #ffffff;
+            --text: #222222;
+            --border: #333333;
+            --cell-bg: #fafafa;
+            --cell-hover: #f0f0f0;
+            --x-color: #e74c3c;
+            --o-color: #3498db;
+            --btn-bg: #2ecc71;
+            --btn-hover: #27ae60;
+            --overlay-bg: rgba(0, 0, 0, 0.6);
+            --accent: #f1c40f;
+        }
+
+        body.dark {
+            --bg: #121212;
+            --card-bg: #1e1e1e;
+            --text: #eaeaea;
+            --border: #cccccc;
+            --cell-bg: #2a2a2a;
+            --cell-hover: #333333;
+            --x-color: #ff6b6b;
+            --o-color: #64b5f6;
+            --btn-bg: #27ae60;
+            --btn-hover: #2ecc71;
+            --overlay-bg: rgba(0, 0, 0, 0.75);
+            --accent: #f39c12;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .container {
+            background: var(--card-bg);
+            padding: 20px 25px;
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+            width: 360px;
+            max-width: 95vw;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        button {
+            padding: 6px 12px;
+            font-size: 14px;
+            border: none;
+            border-radius: 6px;
+            background: var(--btn-bg);
+            color: #fff;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.05s;
+        }
+
+        button:hover {
+            background: var(--btn-hover);
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        .user-info {
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .status {
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px 0 12px 0;
+            text-align: center;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 80px);
+            grid-template-rows: repeat(3, 80px);
+            gap: 5px;
+            margin: 0 auto 16px auto;
+        }
+
+        .cell {
+            width: 80px;
+            height: 80px;
+            font-size: 48px;      /* bigger symbols */
+            font-weight: 900;     /* extra bold */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--cell-bg);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s, color 0.2s;
+            line-height: 1;
+        }
+
+        .cell:hover {
+            background: var(--cell-hover);
+        }
+
+        .cell.x {
+            color: var(--x-color);
+        }
+
+        .cell.o {
+            color: var(--o-color);
+        }
+
+        .scores {
+            display: flex;
+            justify-content: space-around;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .score-box {
+            text-align: center;
+            padding: 6px 10px;
+            border-radius: 6px;
+            background: var(--cell-bg);
+            border: 1px solid var(--border);
+            min-width: 70px;
+        }
+
+        .score-label {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .score-value {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 4px;
+        }
+
+        /* Overlay for win/draw */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--overlay-bg);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--card-bg);
+            color: var(--text);
+            padding: 20px 25px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            max-width: 90vw;
+            width: 320px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .modal h2 {
+            margin: 0 0 8px 0;
+            font-size: 26px;
+        }
+
+        .modal p {
+            margin: 0 0 16px 0;
+            font-size: 15px;
+        }
+
+        .confetti {
+            position: absolute;
+            width: 8px;
+            height: 12px;
+            background: var(--accent);
+            top: -20px;
+            border-radius: 2px;
+            animation: fall linear forwards;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(120vh) rotate(720deg);
+            }
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .modal-buttons button {
+            min-width: 90px;
+        }
+
+        .login-section {
+            margin-top: 10px;
+            border-top: 1px solid var(--border);
+            padding-top: 10px;
+        }
+
+        .login-section input {
+            width: 100%;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--cell-bg);
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        .login-section .row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .login-section .row button {
+            flex: 1;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Tic Tac Toe</h1>
+            <div class="controls">
+                <button id="themeToggle">Dark</button>
+                <button id="logoutBtn" class="hidden">Logout</button>
+            </div>
+        </div>
+
+        <div id="notLoggedIn" class="login-section">
+            <div style="font-size:14px; margin-bottom:6px;">
+                Login to play and track your score
+            </div>
+            <input id="usernameInput" type="text" placeholder="Enter username" />
+            <div class="row">
+                <button id="loginBtn">Login</button>
+            </div>
+        </div>
+
+        <div id="gameSection" class="hidden">
+            <div class="user-info" id="userInfo"></div>
+
+            <div class="scores">
+                <div class="score-box">
+                    <div class="score-label">X Wins</div>
+                    <div class="score-value" id="xWins">0</div>
+                </div>
+                <div class="score-box">
+                    <div class="score-label">O Wins</div>
+                    <div class="score-value" id="oWins">0</div>
+                </div>
+                <div class="score-box">
+                    <div class="score-label">Draws</div>
+                    <div class="score-value" id="draws">0</div>
+                </div>
+            </div>
+
+            <div class="status" id="status">Player X's turn</div>
+
+            <div class="board" id="board">
+                <div class="cell" data-index="0"></div>
+                <div class="cell" data-index="1"></div>
+                <div class="cell" data-index="2"></div>
+                <div class="cell" data-index="3"></div>
+                <div class="cell" data-index="4"></div>
+                <div class="cell" data-index="5"></div>
+                <div class="cell" data-index="6"></div>
+                <div class="cell" data-index="7"></div>
+                <div class="cell" data-index="8"></div>
+            </div>
+
+            <div style="text-align:center;">
+                <button id="restartBtn">Restart Game</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Win/Draw Overlay -->
+    <div class="overlay" id="overlay">
+        <div class="modal" id="modal">
+            <h2 id="modalTitle">Congratulations!</h2>
+            <p id="modalMessage">Player X wins the game.</p>
+            <div class="modal-buttons">
+                <button id="playAgainBtn">Play Again</button>
+                <button id="closeOverlayBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Theme ---
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+
+        const savedTheme = localStorage.getItem('ttt_theme');
+        if (savedTheme === 'dark') {
+            body.classList.add('dark');
+            themeToggle.textContent = 'Light';
+        }
+
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark');
+            const isDark = body.classList.contains('dark');
+            themeToggle.textContent = isDark ? 'Light' : 'Dark';
+            localStorage.setItem('ttt_theme', isDark ? 'dark' : 'light');
+        });
+
+        // --- Auth (simple, local) ---
+        const notLoggedInSection = document.getElementById('notLoggedIn');
+        const gameSection = document.getElementById('gameSection');
+        const usernameInput = document.getElementById('usernameInput');
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const userInfo = document.getElementById('userInfo');
+
+        let currentUser = localStorage.getItem('ttt_user') || null;
+
+        function applyAuthState() {
+            if (currentUser) {
+                notLoggedInSection.classList.add('hidden');
+                gameSection.classList.remove('hidden');
+                logoutBtn.classList.remove('hidden');
+                userInfo.textContent = `Playing as: ${currentUser}`;
+            } else {
+                notLoggedInSection.classList.remove('hidden');
+                gameSection.classList.add('hidden');
+                logoutBtn.classList.add('hidden');
+                userInfo.textContent = '';
+            }
+        }
+
+        applyAuthState();
+
+        loginBtn.addEventListener('click', () => {
+            const name = usernameInput.value.trim();
+            if (!name) {
+                alert('Please enter a username.');
+                return;
+            }
+            currentUser = name;
+            localStorage.setItem('ttt_user', currentUser);
+            applyAuthState();
+            resetScores();
+            startNewGame();
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            currentUser = null;
+            localStorage.removeItem('ttt_user');
+            applyAuthState();
+        });
+
+        // --- Game Logic ---
+        const statusEl = document.getElementById('status');
+        const cells = document.querySelectorAll('.cell');
+        const restartBtn = document.getElementById('restartBtn');
+
+        const xWinsEl = document.getElementById('xWins');
+        const oWinsEl = document.getElementById('oWins');
+        const drawsEl = document.getElementById('draws');
+
+        let board = Array(9).fill(null);
+        let currentPlayer = 'X';
+        let gameActive = true;
+
+        let scores = {
+            X: 0,
+            O: 0,
+            draws: 0
+        };
+
+        const winConditions = [
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],
+            [0, 4, 8],
+            [2, 4, 6]
+        ];
+
+        function loadScores() {
+            const key = `ttt_scores_${currentUser}`;
+            const saved = localStorage.getItem(key);
+            if (saved) {
+                scores = JSON.parse(saved);
+            } else {
+                scores = { X: 0, O: 0, draws: 0 };
+            }
+            updateScoreUI();
+        }
+
+        function saveScores() {
+            const key = `ttt_scores_${currentUser}`;
+            localStorage.setItem(key, JSON.stringify(scores));
+        }
+
+        function resetScores() {
+            scores = { X: 0, O: 0, draws: 0 };
+            saveScores();
+            updateScoreUI();
+        }
+
+        function updateScoreUI() {
+            xWinsEl.textContent = scores.X;
+            oWinsEl.textContent = scores.O;
+            drawsEl.textContent = scores.draws;
+        }
+
+        function checkWinner() {
+            for (const [a, b, c] of winConditions) {
+                if (
+                    board[a] &&
+                    board[a] === board[b] &&
+                    board[a] === board[c]
+                ) {
+                    return board[a];
+                }
+            }
+            return null;
+        }
+
+        function handleCellClick(e) {
+            if (!currentUser) {
+                alert('Please login first.');
+                return;
+            }
+
+            const index = e.target.getAttribute('data-index');
+            if (index === null) return;
+
+            const i = parseInt(index, 10);
+            if (!gameActive || board[i]) return;
+
+            // Set symbol
+            board[i] = currentPlayer;
+            e.target.textContent = currentPlayer;  // This shows X or O
+            e.target.classList.add(currentPlayer.toLowerCase());
+
+            const winner = checkWinner();
+            if (winner) {
+                statusEl.textContent = `Player ${winner} wins!`;
+                scores[winner] += 1;
+                saveScores();
+                updateScoreUI();
+                showOverlay(true, winner);
+                gameActive = false;
+                return;
+            }
+
+            if (board.every(cell => cell !== null)) {
+                statusEl.textContent = "It's a draw!";
+                scores.draws += 1;
+                saveScores();
+                updateScoreUI();
+                showOverlay(false, null);
+                gameActive = false;
+                return;
+            }
+
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            statusEl.textContent = `Player ${currentPlayer}'s turn`;
+        }
+
+        function startNewGame() {
+            board = Array(9).fill(null);
+            currentPlayer = 'X';
+            gameActive = true;
+            statusEl.textContent = `Player ${currentPlayer}'s turn`;
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.classList.remove('x', 'o');
+            });
+            if (currentUser) loadScores();
+        }
+
+        restartBtn.addEventListener('click', () => {
+            if (!currentUser) return;
+            startNewGame();
+        });
+
+        // --- Overlay & Celebration ---
+        const overlay = document.getElementById('overlay');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalMessage = document.getElementById('modalMessage');
+        const playAgainBtn = document.getElementById('playAgainBtn');
+        const closeOverlayBtn = document.getElementById('closeOverlayBtn');
+        const modal = document.getElementById('modal');
+
+        function showOverlay(isWin, winner) {
+            if (isWin) {
+                modalTitle.textContent = 'Congratulations!';
+                modalMessage.textContent = `Player ${winner} wins the game!`;
+                createConfetti();
+            } else {
+                modalTitle.textContent = 'Game Draw!';
+                modalMessage.textContent = 'No one wins this round.';
+            }
+            overlay.classList.add('show');
+        }
+
+        function hideOverlay() {
+            overlay.classList.remove('show');
+            const confettis = document.querySelectorAll('.confetti');
+            confettis.forEach(c => c.remove());
+        }
+
+        function createConfetti() {
+            const colors = ['#f1c40f', '#e74c3c', '#3498db', '#2ecc71', '#9b59b6'];
+            for (let i = 0; i < 80; i++) {
+                const conf = document.createElement('div');
+                conf.classList.add('confetti');
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.background = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                conf.style.opacity = Math.random() * 0.7 + 0.3;
+                modal.appendChild(conf);
+            }
+        }
+
+        playAgainBtn.addEventListener('click', () => {
+            hideOverlay();
+            startNewGame();
+        });
+
+        closeOverlayBtn.addEventListener('click', () => {
+            hideOverlay();
+        });
+
+        // Click handler
+        cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+
+        // Initialize scores if already logged in
+        if (currentUser) {
+            loadScores();
+            startNewGame();
+        }
+    </script>
+</body>
+</html>
